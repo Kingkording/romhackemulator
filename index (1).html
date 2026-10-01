@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blaze Black / Volt White</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+
+        :root {
+            --bg: #0d0d0f;
+            --surface: #17171a;
+            --border: #2a2a30;
+            --accent-b: #4f8ef7;
+            --accent-w: #f7c94f;
+            --text: #e8e8ec;
+            --muted: #6b6b78;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Space Grotesk', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .bb { color: var(--accent-b); }
+        .vw { color: var(--accent-w); }
+
+        header p {
+            color: var(--muted);
+            margin-top: 8px;
+            font-size: 0.95rem;
+        }
+
+        .drop-zone {
+            border: 1.5px dashed var(--border);
+            border-radius: 16px;
+            padding: 48px 64px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            width: 100%;
+            max-width: 520px;
+            margin-bottom: 24px;
+        }
+
+        .drop-zone:hover, .drop-zone.over {
+            border-color: var(--accent-b);
+            background: #17171a;
+        }
+
+        .drop-zone .icon { font-size: 2.4rem; margin-bottom: 12px; }
+
+        .drop-zone strong {
+            display: block;
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .drop-zone small { color: var(--muted); font-size: 0.85rem; }
+
+        #file-input { display: none; }
+
+        .saves {
+            width: 100%;
+            max-width: 520px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        .saves h3 { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .save-list { display: flex; flex-direction: column; gap: 8px; }
+
+        .save-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+        }
+
+        .save-item span { color: var(--muted); font-size: 0.8rem; }
+
+        .save-item button {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: inherit;
+            transition: border-color 0.15s;
+        }
+
+        .save-item button:hover { border-color: var(--accent-b); color: var(--accent-b); }
+        .save-item .del { margin-left: 6px; }
+        .save-item .del:hover { border-color: #f74f4f; color: #f74f4f; }
+
+        #emulator-wrap {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .now-playing {
+            font-size: 0.9rem;
+            color: var(--muted);
+            align-self: flex-start;
+        }
+
+        .now-playing strong { color: var(--accent-b); }
+
+        #game { width: 100%; border-radius: 12px; overflow: hidden; }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .controls button {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: border-color 0.15s;
+        }
+
+        .controls button:hover { border-color: var(--accent-b); }
+
+        .status {
+            font-size: 0.8rem;
+            color: var(--muted);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1><span class="bb">Blaze Black</span> / <span class="vw">Volt White</span></h1>
+    <p>Drop your patched .nds ROM to play in the browser. Saves are stored locally in your browser.</p>
+</header>
+
+<div class="saves" id="saves-panel">
+    <h3>Saved Games</h3>
+    <div class="save-list" id="save-list"></div>
+</div>
+
+<div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <div class="icon">📂</div>
+    <strong>Click or drag your ROM here</strong>
+    <small>PokemonBlazeBlackFull.nds or PokemonVoltWhiteFull.nds</small>
+</div>
+<input type="file" id="file-input" accept=".nds">
+
+<div id="emulator-wrap">
+    <div class="now-playing" id="now-playing"></div>
+    <div id="game"></div>
+    <div class="controls">
+        <button onclick="saveGame()">💾 Save State</button>
+        <button onclick="loadSave()">📂 Load State</button>
+        <button onclick="resetPage()">↩ Load Different ROM</button>
+    </div>
+    <div class="status">Save states are stored in your browser. Clearing browser data will erase them.</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/emulatorjs@latest/src/loader.js"></script>
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    let currentROMName = '';
+
+    // Drag and drop
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('over'); loadROM(e.dataTransfer.files[0]); });
+    fileInput.addEventListener('change', e => loadROM(e.target.files[0]));
+
+    function loadROM(file) {
+        if (!file || !file.name.endsWith('.nds')) {
+            alert('Please use a .nds ROM file.');
+            return;
+        }
+        currentROMName = file.name;
+        const url = URL.createObjectURL(file);
+
+        dropZone.style.display = 'none';
+        document.getElementById('emulator-wrap').style.display = 'flex';
+
+        const label = file.name.toLowerCase().includes('blaze') ? '⚡ Blaze Black' : '⚡ Volt White';
+        document.getElementById('now-playing').innerHTML = `Now playing: <strong>${label}</strong>`;
+
+        EJS_player = '#game';
+        EJS_core = 'nds';
+        EJS_gameUrl = url;
+        EJS_pathtodata = 'https://cdn.jsdelivr.net/npm/emulatorjs@latest/data/';
+        EJS_language = 'en-US';
+        EJS_startOnLoaded = true;
+        EJS_onGameStart = () => loadAutoSave();
+    }
+
+    // Save state to localStorage
+    function saveGame() {
+        if (!window.EJS_emulator) { alert('Game not running yet.'); return; }
+        try {
+            const state = EJS_emulator.saveState();
+            const key = 'save_' + currentROMName + '_' + Date.now();
+            localStorage.setItem(key, JSON.stringify({ name: currentROMName, date: new Date().toLocaleString(), state }));
+            renderSaves();
+            alert('Game saved!');
+        } catch(e) { alert('Save failed: ' + e.message); }
+    }
+
+    function loadSave() {
+        renderSaves();
+        document.getElementById('saves-panel').style.display = 'block';
+        document.getElementById('saves-panel').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function loadAutoSave() {
+        // Auto-load most recent save for this ROM
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('save_' + currentROMName));
+        if (keys.length === 0) return;
+        const latest = keys.sort().pop();
+        try {
+            const data = JSON.parse(localStorage.getItem(latest));
+            if (data && data.state && window.EJS_emulator) EJS_emulator.loadState(data.state);
+        } catch(e) {}
+    }
+
+    function renderSaves() {
+        const panel = document.getElementById('saves-panel');
+        const list = document.getElementById('save-list');
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('save_'));
+
+        if (keys.length === 0) {
+            panel.style.display = 'none';
+            return;
+        }
+
+        panel.style.display = 'block';
+        list.innerHTML = '';
+
+        keys.sort().reverse().forEach(key => {
+            try {
+                const data = JSON.parse(localStorage.getItem(key));
+                const item = document.createElement('div');
+                item.className = 'save-item';
+                item.innerHTML = `
+                    <div>
+                        <div>${data.name}</div>
+                        <span>${data.date}</span>
+                    </div>
+                    <div>
+                        <button onclick="restoreState('${key}')">Load</button>
+                        <button class="del" onclick="deleteSave('${key}')">Delete</button>
+                    </div>`;
+                list.appendChild(item);
+            } catch(e) {}
+        });
+    }
+
+    function restoreState(key) {
+        try {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (window.EJS_emulator) EJS_emulator.loadState(data.state);
+        } catch(e) { alert('Could not load save.'); }
+    }
+
+    function deleteSave(key) {
+        if (confirm('Delete this save?')) {
+            localStorage.removeItem(key);
+            renderSaves();
+        }
+    }
+
+    function resetPage() { location.reload(); }
+
+    renderSaves();
+</script>
+</body>
+</html>
